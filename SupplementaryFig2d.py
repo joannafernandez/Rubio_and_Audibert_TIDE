@@ -61,9 +61,20 @@ summed_df = (
 )
 
 
+subset = summed_df.copy()
+
+#Calculate total NHEJ + uncut per condition/replicate
+total = subset.groupby(['condition', 'replicate'])['summed_percentage'].transform('sum')
+#Calculate percentage within that total
+subset['relative_percentage'] = (subset['summed_percentage'] / total) * 100
+# Split 'condition' into two new columns: 'condition' and 'time'
+subset[['condition', 'time']] = subset['condition'].str.split('_', n=1, expand=True)
+
+
+
 #%%
 
-hue_order = ['sgLAD_6hr', 'sgLAD_24hr', 'sgLAD_48hr']
+hue_order = ['6hr', '24hr', '48hr']
 
 custom_palette = {
     'MMEJ': '#D33873',
@@ -75,11 +86,11 @@ sns.set_context("paper", font_scale=2.5)
 
 
 g = sns.catplot(
-    data=summed_df,
+    data=subset,
     x="class",
-    y="summed_percentage",
+    y="relative_percentage",
     hue="class",
-    col="condition",
+    col="time",
     kind="bar",
     palette=custom_palette,
     col_order=hue_order,
@@ -92,11 +103,11 @@ g = sns.catplot(
 )
 
 for ax, cond in zip(g.axes.flat, hue_order):
-    data = summed_df[summed_df['condition'] == cond]
+    data = subset[subset['time'] == cond]
     sns.stripplot(
         data=data,
         x="class",
-        y="summed_percentage",
+        y="relative_percentage",
         ax=ax,
         palette=["white"],  
         alpha=0.8,
@@ -112,7 +123,7 @@ g.set_titles("{col_name}")
 plt.tight_layout()
 plt.show()
 
-plt.savefig("bypathway.svg", dpi=300, bbox_inches='tight')
+plt.savefig("bypathwayrelative.svg", dpi=300, bbox_inches='tight')
 
 
 
